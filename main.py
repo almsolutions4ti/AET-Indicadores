@@ -19,6 +19,7 @@ def load_data():
     df = pd.read_excel("PAINEL DE CONTROLE - BBT V3.xlsx", sheet_name=plan)
     return df
 
+
 # Função para filtrar dados com base na seleção do usuário
 def filter_data(base):
     st.sidebar.header('Filtro por cidades: ')
@@ -35,19 +36,27 @@ def display_totals_and_graph(selection_query):
     locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 
     # Calcular totais
-    total_litros = locale.format_string('%.2f', round(selection_query["Peso"].sum(), 2), grouping=True)
-    total_notas = locale.format_string('%.2f', pd.to_numeric(selection_query['Nota'], errors='coerce').count(), grouping=True)
-
+    total_litros = round(selection_query["Peso"].sum(), 2)
+    total_notas = pd.to_numeric(selection_query['Nota'], errors='coerce').count()
+    total_populacao = (selection_query['Habitantes'].sum())
+    litros_por_reg = total_litros/float(total_populacao)
+   
+   
     # Configurar layout em duas colunas
-    first_col, second_col = st.columns(2)
+    first_col, second_col, third_col = st.columns(3)
 
     with first_col:
         st.markdown("### Total Litros")
-        st.subheader(f'{total_litros}')
+        st.subheader(f'{locale.format_string('%.2f', total_litros, grouping=True)}')
 
     with second_col:
         st.markdown("### Total Notas")
-        st.subheader(f'{total_notas}')
+        st.subheader(f'{locale.format_string('%.0f', total_notas, grouping=True)}')
+
+    with third_col:
+        st.markdown("### Total Litros por Região")
+        st.subheader(f'{locale.format_string('%.4f', litros_por_reg, grouping=True)}')
+    
 
     st.markdown("---")
 
@@ -64,8 +73,10 @@ def display_totals_and_graph(selection_query):
     )
 
     grafico.update_layout(plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(showgrid=False), barmode='stack')
+    
     st.plotly_chart(grafico)
 
+    
 # Função para exibir gráfico de linha mensal
 def display_monthly_chart(df):
     # Definir a ordem desejada dos meses (do menor para o maior)
@@ -85,6 +96,7 @@ def display_monthly_chart(df):
 
     # Exibir o gráfico no Streamlit
     st.plotly_chart(fig)
+    
 
 # Função principal
 def main():
