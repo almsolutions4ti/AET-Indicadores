@@ -8,7 +8,7 @@ import locale
 # Função para carregar dados da planilha "BASE"
 @st.cache_data
 def load_data_analise():
-    plan2 = "BASE"
+    plan2 = "HABI"
     base = pd.read_excel("PAINEL DE CONTROLE - BBT V3.xlsx", sheet_name=plan2)
     return base
 
@@ -25,10 +25,10 @@ def filter_data(base):
     st.sidebar.header('Filtro por cidades: ')
     category = st.sidebar.multiselect(
         "Filtro por cidade:",
-        options=base["Cidade"].unique(),
-        default=base["Cidade"].unique()
+        options=base["Cidades"].unique(),
+        default=base["Cidades"].unique()
     )
-    return base.query("Cidade == @category")
+    return base.query("Cidades == @category")
 
 # Função para exibir totais e gráfico de barras
 def display_totals_and_graph(selection_query):
@@ -36,10 +36,12 @@ def display_totals_and_graph(selection_query):
     locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 
     # Calcular totais
-    total_litros = round(selection_query["Peso"].sum(), 2)
-    total_notas = pd.to_numeric(selection_query['Nota'], errors='coerce').count()
-    total_populacao = (selection_query['Habitantes'].sum())
-    litros_por_reg = total_litros/float(total_populacao)
+    total_litros = round(selection_query["Pesos"].sum(), 2)
+    #total_notas = pd.to_numeric(selection_query['Notas'], errors='coerce')
+    total_notas = (selection_query['Notas'])
+   
+    total_lp_habitante = (selection_query['LPHabitante'].sum())
+    #litros_por_reg = total_litros/float(total_lp_habitante)
    
    
     # Configurar layout em duas colunas
@@ -51,22 +53,23 @@ def display_totals_and_graph(selection_query):
 
     with second_col:
         st.markdown("### Total Notas")
-        st.subheader(f'{locale.format_string('%.0f', total_notas, grouping=True)}')
+        st.subheader(f'{locale.format_string('%.0f',total_notas.sum(), grouping=True)}')
 
     with third_col:
         st.markdown("### Total Litros por Região")
-        st.subheader(f'{locale.format_string('%.4f', litros_por_reg, grouping=True)}')
+        st.subheader(f'{locale.format_string('%.4f', total_lp_habitante, grouping=True)}')
     
 
     st.markdown("---")
 
     # Agrupar por cidade e criar gráfico de barras
-    total_cidades = selection_query.groupby(by=["Cidade"]).agg({'Peso':'sum', 'Nota':'count'}).reset_index()
+    total_cidades = selection_query.groupby(by=["Cidades"]).agg({'Pesos':'sum', 'Notas':'sum'}).reset_index() 
+    
 
     grafico = px.bar(
         total_cidades,
-        x="Cidade",
-        y=["Peso", "Nota"],
+        x="Cidades",
+        y=["Pesos", 'Notas'],
         title="Cidades - Peso Vs Notas",
         color_discrete_sequence=["green", "#f51717"],
         labels={'value': 'Peso-Nota', 'variable': 'Categoria'}
@@ -91,7 +94,7 @@ def display_monthly_chart(df):
     fig = px.line(df, x="DATA", y="VOLUME_PESO", text='VOLUME_PESO', color_discrete_sequence=['green'], title='Volume Mensal - Peso')
 
     # Atualizar configurações do gráfico
-    fig.update_yaxes(range=[90000, 220000])
+    fig.update_yaxes(range=[0, 220000])
     fig.update_traces(texttemplate='%{text:.2s}', textposition='top center')
 
     # Exibir o gráfico no Streamlit
